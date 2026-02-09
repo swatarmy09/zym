@@ -14,7 +14,8 @@ import {
     where,
     updateDoc,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // ========================================
@@ -61,6 +62,8 @@ const activityListEl = document.getElementById('activityList');
 let currentUser = null;
 let gymMembers = [];
 let attendanceToday = [];
+let unsubscribeMembers = null;
+let unsubscribeAttendance = null;
 
 // ========================================
 // Initialize Dashboard
@@ -98,8 +101,8 @@ async function loadUserData(user) {
             headerGymNameEl.textContent = 'Your Gym';
         }
 
-        // Load gym data
-        await loadGymData(user.uid);
+        // Initialize Realtime Listeners
+        setupRealtimeListeners(user.uid);
     } catch (error) {
         console.error('Error loading user data:', error);
         headerGymNameEl.textContent = 'Your Gym';
@@ -107,40 +110,70 @@ async function loadUserData(user) {
 }
 
 // ========================================
-// Load Gym Data (Members, Attendance, etc.)
 // ========================================
-async function loadGymData(ownerId) {
-    try {
-        // Load Members
-        const membersQuery = query(
-            collection(db, 'members'),
-            where('ownerId', '==', ownerId)
-        );
-        const membersSnapshot = await getDocs(membersQuery);
-        gymMembers = membersSnapshot.docs.map(doc => ({
+// Setup Realtime Listeners (Members & Attendance)
+// ========================================
+function setupRealtimeListeners(ownerId) {
+    // 1. Members Listener
+    if (unsubscribeMembers) unsubscribeMembers(); // Clear existing if any
+
+    const membersQuery = query(
+        collection(db, 'members'),
+        where('ownerId', '==', ownerId)
+    );
+
+    unsubscribeMembers = onSnapshot(membersQuery, (snapshot) => {
+        gymMembers = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
-        // Load Today's Attendance
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTimestamp = Timestamp.fromDate(today);
-
-        const attendanceQuery = query(
-            collection(db, 'attendance'),
-            where('ownerId', '==', ownerId),
-            where('date', '>=', todayTimestamp)
-        );
-        const attendanceSnapshot = await getDocs(attendanceQuery);
-        attendanceToday = attendanceSnapshot.docs.map(doc => doc.data());
-
-        // Update Stats
+        console.log(`✅ realtime update: ${gymMembers.length} members`);
         updateStats();
         updateRecentActivity();
-    } catch (error) {
-        console.error('Error loading gym data:', error);
-    }
+
+        // Also update lists if modals are open
+        if (attendanceModal.classList.contains('active')) {
+            renderMembersList(searchMemberInput.value);
+        }
+        if (dueFeesModal.classList.contains('active')) {
+            renderDueFeesList();
+        }
+    }, (error) => {
+        console.error("Error listening to members:", error);
+    });
+
+    // 2. Attendance Listener
+    if (unsubscribeAttendance) unsubscribeAttendance();
+
+    const attendanceQuery = query(
+        collection(db, 'attendance'),
+        where('ownerId', '==', ownerId)
+    );
+
+    unsubscribeAttendance = onSnapshot(attendanceQuery, (snapshot) => {
+        const allAttendance = snapshot.docs.map(doc => doc.data());
+
+        // Filter for today client-side
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        attendanceToday = allAttendance.filter(record => {
+            if (!record.date) return false;
+            const recordDate = record.date.toDate ? record.date.toDate() : new Date(record.date);
+            return recordDate >= today;
+        });
+
+        console.log(`✅ realtime update: ${attendanceToday.length} attendance records today`);
+        updateStats();
+
+        // Update list if modal open
+        if (attendanceModal.classList.contains('active')) {
+            renderMembersList(searchMemberInput.value);
+        }
+    }, (error) => {
+        console.error("Error listening to attendance:", error);
+    });
 }
 
 // ========================================
@@ -152,7 +185,7 @@ function updateStats() {
 
     // Active Members (membership not expired)
     const activeMembers = gymMembers.filter(member => {
-        if (!member.membershipEndDate) return false;
+        if (!member.membershipEndDate || !member.membershipEndDate.toDate) return false;
         const endDate = member.membershipEndDate.toDate();
         return endDate > new Date();
     });
@@ -160,7 +193,7 @@ function updateStats() {
 
     // Due Fee Members (membership expired or ending in 7 days)
     const dueMembers = gymMembers.filter(member => {
-        if (!member.membershipEndDate) return true;
+        if (!member.membershipEndDate || !member.membershipEndDate.toDate) return true;
         const endDate = member.membershipEndDate.toDate();
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
@@ -171,16 +204,30 @@ function updateStats() {
     // Today's Attendance
     todayAttendanceEl.textContent = attendanceToday.length;
 
-    // Monthly Revenue (calculate from members joined this month)
+    // Monthly Revenue (calculate from members joined OR paid this month)
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
+
     const monthlyRevenue = gymMembers.reduce((total, member) => {
-        if (member.joiningDate) {
+        let added = false;
+
+        // 1. Check Joining Date
+        if (member.joiningDate && member.joiningDate.toDate) {
             const joinDate = member.joiningDate.toDate();
             if (joinDate.getMonth() === currentMonth && joinDate.getFullYear() === currentYear) {
-                return total + (member.feeAmount || 0);
+                total += (Number(member.feeAmount) || 0);
+                added = true;
             }
         }
+
+        // 2. Check Last Payment Date (if not already counted)
+        if (!added && member.lastPaymentDate && member.lastPaymentDate.toDate) {
+            const paymentDate = member.lastPaymentDate.toDate();
+            if (paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear) {
+                total += (Number(member.feeAmount) || 0);
+            }
+        }
+
         return total;
     }, 0);
     monthlyRevenueEl.textContent = `₹${monthlyRevenue.toLocaleString('en-IN')}`;
@@ -217,7 +264,7 @@ function updateRecentActivity() {
 }
 
 function formatDate(timestamp) {
-    if (!timestamp) return 'Recently';
+    if (!timestamp || !timestamp.toDate) return 'Recently';
     const date = timestamp.toDate();
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -313,9 +360,6 @@ addMemberForm.addEventListener('submit', async (e) => {
         await addDoc(collection(db, 'members'), memberData);
         console.log('✅ Member added successfully');
 
-        // Reload data
-        await loadGymData(currentUser.uid);
-
         // Close modal and reset form
         closeModal(addMemberModal);
         addMemberForm.reset();
@@ -385,9 +429,8 @@ async function markAttendance(memberId) {
 
         console.log('✅ Attendance marked');
 
-        // Reload data
-        await loadGymData(currentUser.uid);
-        renderMembersList(searchMemberInput.value);
+        console.log('✅ Attendance marked');
+        // Data updates automatically via onSnapshot
     } catch (error) {
         console.error('Error marking attendance:', error);
         alert('Failed to mark attendance. Please try again.');
@@ -460,9 +503,8 @@ async function collectFee(memberId) {
 
         console.log('✅ Fee collected and membership renewed');
 
-        // Reload data
-        await loadGymData(currentUser.uid);
-        renderDueFeesList();
+        console.log('✅ Fee collected and membership renewed');
+        // Data updates automatically via onSnapshot
 
         alert('Payment collected successfully! 💰');
     } catch (error) {
@@ -476,6 +518,10 @@ async function collectFee(memberId) {
 // ========================================
 logoutBtn.addEventListener('click', async () => {
     try {
+        // Unsubscribe listeners
+        if (unsubscribeMembers) unsubscribeMembers();
+        if (unsubscribeAttendance) unsubscribeAttendance();
+
         await signOut(auth);
         console.log('✅ Logged out successfully');
         window.location.href = 'index.html';
