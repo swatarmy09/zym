@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GymOwner Pro</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <span class="logo">🏋️</span>
+                    <h1>GymOwner Pro</h1>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="welcome-card">
+                <h2>Welcome back, <span id="ownerName">Owner</span>! 👋</h2>
+                <p class="gym-name" id="gymName">Loading...</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Members</p>
+                        <p class="stat-value">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Monthly Revenue</p>
+                        <p class="stat-value">₹0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active Today</p>
+                        <p class="stat-value">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coming-soon">
+                <h3>🚀 More features coming soon!</h3>
+                <p>We're building amazing tools to help you manage your gym effortlessly.</p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+
+</html>
