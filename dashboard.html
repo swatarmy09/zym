@@ -18,7 +18,10 @@
             <div class="header-content">
                 <div class="logo-section">
                     <span class="logo">🏋️</span>
-                    <h1>GymOwner Pro</h1>
+                    <div>
+                        <h1>GymOwner Pro</h1>
+                        <p class="gym-name" id="headerGymName">Loading...</p>
+                    </div>
                 </div>
                 <button class="logout-btn" id="logoutBtn">Logout</button>
             </div>
@@ -26,42 +29,182 @@
 
         <!-- Main Content -->
         <main class="dashboard-main">
-            <div class="welcome-card">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
                 <h2>Welcome back, <span id="ownerName">Owner</span>! 👋</h2>
-                <p class="gym-name" id="gymName">Loading...</p>
+                <p class="date-time" id="currentDateTime"></p>
             </div>
 
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" id="addMemberBtn">
+                    <span class="btn-icon">➕</span>
+                    <span class="btn-label">Add Member</span>
+                </button>
+                <button class="action-btn secondary" id="markAttendanceBtn">
+                    <span class="btn-icon">✓</span>
+                    <span class="btn-label">Mark Attendance</span>
+                </button>
+                <button class="action-btn tertiary" id="viewDueFeesBtn">
+                    <span class="btn-icon">💰</span>
+                    <span class="btn-label">View Due Fees</span>
+                </button>
+            </div>
+
+            <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-header">
+                        <span class="stat-icon">👥</span>
+                        <span class="stat-trend positive">+5</span>
+                    </div>
                     <div class="stat-info">
                         <p class="stat-label">Total Members</p>
-                        <p class="stat-value">0</p>
+                        <p class="stat-value" id="totalMembers">0</p>
+                        <p class="stat-subtitle">All registered members</p>
                     </div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon">💰</div>
+                    <div class="stat-header">
+                        <span class="stat-icon active">✅</span>
+                        <span class="stat-trend positive">+2</span>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active Members</p>
+                        <p class="stat-value" id="activeMembers">0</p>
+                        <p class="stat-subtitle">Currently active</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-icon warning">⚠️</span>
+                        <span class="stat-trend negative">3</span>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Fee Due Members</p>
+                        <p class="stat-value" id="dueFeeMembers">0</p>
+                        <p class="stat-subtitle">Pending payments</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">📅</span>
+                        <span class="stat-trend">Today</span>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Today's Attendance</p>
+                        <p class="stat-value" id="todayAttendance">0</p>
+                        <p class="stat-subtitle">Members checked in</p>
+                    </div>
+                </div>
+
+                <div class="stat-card revenue">
+                    <div class="stat-header">
+                        <span class="stat-icon">💵</span>
+                        <span class="stat-trend positive">+12%</span>
+                    </div>
                     <div class="stat-info">
                         <p class="stat-label">Monthly Revenue</p>
-                        <p class="stat-value">₹0</p>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <p class="stat-label">Active Today</p>
-                        <p class="stat-value">0</p>
+                        <p class="stat-value" id="monthlyRevenue">₹0</p>
+                        <p class="stat-subtitle">This month's earnings</p>
                     </div>
                 </div>
             </div>
 
-            <div class="coming-soon">
-                <h3>🚀 More features coming soon!</h3>
-                <p>We're building amazing tools to help you manage your gym effortlessly.</p>
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h3>Recent Activity</h3>
+                <div class="activity-list" id="activityList">
+                    <div class="activity-item">
+                        <span class="activity-icon">👤</span>
+                        <div class="activity-details">
+                            <p class="activity-text">No recent activity</p>
+                            <p class="activity-time">Start by adding members</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div class="modal" id="addMemberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Member</h3>
+                <button class="close-btn" id="closeAddMemberModal">&times;</button>
+            </div>
+            <form id="addMemberForm">
+                <div class="form-group">
+                    <label for="memberName">Full Name</label>
+                    <input type="text" id="memberName" placeholder="Enter member name" required>
+                </div>
+                <div class="form-group">
+                    <label for="memberMobile">Mobile Number</label>
+                    <input type="tel" id="memberMobile" placeholder="10-digit mobile number" maxlength="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="memberEmail">Email (Optional)</label>
+                    <input type="email" id="memberEmail" placeholder="member@example.com">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="membershipPlan">Membership Plan</label>
+                        <select id="membershipPlan" required>
+                            <option value="">Select Plan</option>
+                            <option value="monthly">Monthly - ₹1000</option>
+                            <option value="quarterly">Quarterly - ₹2700</option>
+                            <option value="yearly">Yearly - ₹10000</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="joiningDate">Joining Date</label>
+                        <input type="date" id="joiningDate" required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelAddMember">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mark Attendance Modal -->
+    <div class="modal" id="attendanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Mark Attendance</h3>
+                <button class="close-btn" id="closeAttendanceModal">&times;</button>
+            </div>
+            <div class="search-section">
+                <input type="text" id="searchMember" placeholder="Search member by name or mobile..."
+                    class="search-input">
+            </div>
+            <div class="members-list" id="membersList">
+                <div class="empty-state">
+                    <p>No members found. Add members first.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Due Fees Modal -->
+    <div class="modal" id="dueFeesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Members with Due Fees</h3>
+                <button class="close-btn" id="closeDueFeesModal">&times;</button>
+            </div>
+            <div class="due-fees-list" id="dueFeesList">
+                <div class="empty-state">
+                    <p>No pending fees. All members are up to date! 🎉</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="dashboard.js"></script>
