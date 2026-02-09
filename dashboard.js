@@ -551,8 +551,19 @@ saveAttendanceBtn.addEventListener('click', saveAttendance);
 // ========================================
 // Render Due Fees List
 // ========================================
+// ========================================
+// Render Fee & Renewal List
+// ========================================
 function renderDueFeesList() {
-    const dueMembers = gymMembers.filter(member => {
+    // Sort logic: members with nearest expiry first
+    const sortedMembers = [...gymMembers].sort((a, b) => {
+        const dateA = a.membershipEndDate ? a.membershipEndDate.toDate() : new Date(0);
+        const dateB = b.membershipEndDate ? b.membershipEndDate.toDate() : new Date(0);
+        return dateA - dateB;
+    });
+
+    // Filter logic: show expired or expiring soon (within 7 days)
+    const dueMembers = sortedMembers.filter(member => {
         if (!member.membershipEndDate) return true;
         const endDate = member.membershipEndDate.toDate();
         const sevenDaysFromNow = new Date();
@@ -561,31 +572,85 @@ function renderDueFeesList() {
     });
 
     if (dueMembers.length === 0) {
-        dueFeesListEl.innerHTML = '<div class="empty-state"><p>No pending fees. All members are up to date! 🎉</p></div>';
+        dueFeesListEl.innerHTML = `
+            <div class="empty-state">
+                <span style="font-size: 48px;">🎉</span>
+                <p>No pending fees. All members are up to date!</p>
+            </div>`;
         return;
     }
 
     dueFeesListEl.innerHTML = dueMembers.map(member => {
-        const daysOverdue = member.membershipEndDate
-            ? Math.ceil((new Date() - member.membershipEndDate.toDate()) / (1000 * 60 * 60 * 24))
-            : 0;
+        const endDate = member.membershipEndDate ? member.membershipEndDate.toDate() : null;
+        const now = new Date();
+
+        let daysDiff = 0;
+        let statusClass = '';
+        let statusText = '';
+        let statusIcon = '';
+
+        if (endDate) {
+            const timeDiff = endDate - now;
+            daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)); // Round up to handle partial days correctly
+
+            if (daysDiff < 0) {
+                statusClass = 'overdue';
+                statusText = `${Math.abs(daysDiff)} days Overdue`;
+                statusIcon = '⚠️';
+            } else if (daysDiff === 0) {
+                statusClass = 'warning';
+                statusText = 'Expires Today';
+                statusIcon = '🕒';
+            } else {
+                statusClass = 'warning';
+                statusText = `${daysDiff} days Left`;
+                statusIcon = '⏳';
+            }
+        } else {
+            statusClass = 'overdue';
+            statusText = 'No Active Plan';
+            statusIcon = '❓';
+        }
+
+        const formattedDate = endDate ? endDate.toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric'
+        }) : 'N/A';
+
+        // WhatsApp Reminder Message
+        const message = encodeURIComponent(
+            `Hello ${member.name}, your gym membership at ${headerGymNameEl.textContent} expires on ${formattedDate}. Please renew to continue your fitness journey! 🏋️‍♂️`
+        );
+        const whatsappLink = `https://wa.me/91${member.mobile}?text=${message}`;
 
         return `
-            <div class="due-fee-item">
-                <div class="due-fee-info">
-                    <p class="due-fee-name">${member.name}</p>
-                    <p class="due-fee-amount">₹${member.feeAmount || 0} • ${daysOverdue > 0 ? `${daysOverdue} days overdue` : 'Due soon'}</p>
+            <div class="fee-card ${statusClass}">
+                <div class="fee-info-main">
+                    <p class="fee-member-name">${member.name}</p>
+                    <p class="fee-member-plan">${member.membershipPlan} Plan • ₹${member.feeAmount || 0}</p>
                 </div>
-                <button class="collect-btn" data-member-id="${member.id}">Collect</button>
+                
+                <div class="fee-status-section">
+                    <span class="status-pill ${statusClass}">
+                        ${statusIcon} ${statusText}
+                    </span>
+                    <p class="expiry-date">Exp: ${formattedDate}</p>
+                </div>
+
+                <div class="fee-actions">
+                    <button class="action-btn-sm remind" onclick="window.open('${whatsappLink}', '_blank')">
+                        <span class="btn-icon">💬</span> Reminder
+                    </button>
+                    <button class="action-btn-sm pay" onclick="collectFee('${member.id}')">
+                        <span class="btn-icon">💰</span> Mark Paid
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
-
-    // Add event listeners to collect buttons
-    document.querySelectorAll('.collect-btn').forEach(btn => {
-        btn.addEventListener('click', () => collectFee(btn.dataset.memberId));
-    });
 }
+
+// Make collectFee available globally for onclick handler
+window.collectFee = collectFee;
 
 // ========================================
 // Collect Fee (Renew Membership)
