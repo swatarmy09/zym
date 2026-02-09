@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - GymOwner Pro</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+
+        .settings-header {
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-header h1 {
+            font-size: 28px;
+            color: var(--text-primary);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .settings-card {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-save:hover {
+            background: var(--primary-dark);
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .action-row:last-child {
+            border-bottom: none;
+        }
+
+        .action-info h4 {
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .action-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .btn-outline {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-secondary);
+            border-color: var(--text-secondary);
+        }
+
+        .btn-danger {
+            width: 100%;
+            padding: 12px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="settings-container">
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+
+        <div class="settings-header">
+            <h1>⚙️ Settings</h1>
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="settings-card">
+            <h3 class="card-title">Gym Profile</h3>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label>Gym Name</label>
+                    <input type="text" id="gymName" placeholder="Enter your gym name" required>
+                </div>
+                <div class="form-group">
+                    <label>Owner Name</label>
+                    <input type="text" id="ownerName" placeholder="Enter owner name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" disabled
+                        style="background: var(--bg-secondary); cursor: not-allowed;">
+                </div>
+                <button type="submit" class="btn-save">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Preferences -->
+        <div class="settings-card">
+            <h3 class="card-title">Preferences</h3>
+            <div class="form-group">
+                <label>Language</label>
+                <select id="languageSelect">
+                    <option value="en">English (Default)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="settings-card">
+            <h3 class="card-title">Data Management</h3>
+
+            <div class="action-row">
+                <div class="action-info">
+                    <h4>Backup Data</h4>
+                    <p>Download a copy of all members and payment records.</p>
+                </div>
+                <button class="btn-outline" id="backupBtn">Download Backup</button>
+            </div>
+        </div>
+
+        <!-- Account Actions -->
+        <div class="settings-card">
+            <h3 class="card-title">Account</h3>
+            <button class="btn-danger" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <script type="module" src="settings.js"></script>
+</body>
+
+</html>

@@ -23,7 +23,7 @@
                         <p class="gym-name" id="headerGymName">Loading...</p>
                     </div>
                 </div>
-                <button class="logout-btn" id="logoutBtn">Logout</button>
+                <a href="settings.html" class="logout-btn" style="text-decoration: none;">⚙️ Settings</a>
             </div>
         </header>
 
@@ -49,6 +49,21 @@
                     <span class="btn-icon">💰</span>
                     <span class="btn-label">View Due Fees</span>
                 </button>
+                <button class="action-btn settings" id="whatsappSettingsBtn"
+                    style="background-color: #25D366; color: white;">
+                    <span class="btn-icon">💬</span>
+                    <span class="btn-label">WhatsApp Settings</span>
+                </button>
+                <a href="reports.html" class="action-btn reports"
+                    style="background-color: #6366f1; color: white; text-decoration: none;">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-label">Reports</span>
+                </a>
+                <a href="billing.html" class="action-btn billing"
+                    style="background-color: #8b5cf6; color: white; text-decoration: none;">
+                    <span class="btn-icon">💳</span>
+                    <span class="btn-label">Billing</span>
+                </a>
             </div>
 
             <!-- Stats Grid -->
@@ -238,6 +253,83 @@
                     <p>No pending fees. All members are up to date! 🎉</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal-content">
+            <div class="modal-header">
+                <h3>💬 WhatsApp Automation Settings</h3>
+                <button class="close-btn" id="closeSettingsModal">&times;</button>
+            </div>
+
+            <form id="settingsForm">
+                <!-- Absent Reminder -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4>🚫 Absent Reminder</h4>
+                        <label class="switch">
+                            <input type="checkbox" id="absentEnabled">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Reminder Time</label>
+                        <input type="time" id="absentTime">
+                    </div>
+                    <div class="form-group">
+                        <label>Message Template <small>(Variables: {name})</small></label>
+                        <textarea id="absentTemplate" rows="3"
+                            placeholder="Hey {name}, we missed you at the gym today!"></textarea>
+                    </div>
+                </div>
+
+                <!-- Fee Due Reminder -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4>💰 Fee Due Reminder</h4>
+                        <label class="switch">
+                            <input type="checkbox" id="feeDueEnabled">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Reminder Time</label>
+                        <input type="time" id="feeDueTime">
+                    </div>
+                    <div class="form-group">
+                        <label>Message Template <small>(Variables: {name}, {amount}, {date})</small></label>
+                        <textarea id="feeDueTemplate" rows="3"
+                            placeholder="Hello {name}, your fee of ₹{amount} is due on {date}."></textarea>
+                    </div>
+                </div>
+
+                <!-- Motivation Message -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4>💪 Motivation Message</h4>
+                        <label class="switch">
+                            <input type="checkbox" id="motivationEnabled">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Send Time</label>
+                        <input type="time" id="motivationTime">
+                    </div>
+                    <div class="form-group">
+                        <label>Message Template <small>(Variables: {name})</small></label>
+                        <textarea id="motivationTemplate" rows="3"
+                            placeholder="Keep pushing {name}! You're doing great!"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelSettings">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Settings</button>
+                </div>
+            </form>
         </div>
     </div>
 

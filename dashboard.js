@@ -15,7 +15,8 @@ import {
     updateDoc,
     serverTimestamp,
     Timestamp,
-    onSnapshot
+    onSnapshot,
+    setDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // ========================================
@@ -346,6 +347,14 @@ addMemberForm.addEventListener('submit', async (e) => {
         createdAt: serverTimestamp()
     };
 
+    // Check Subscription Limit
+    const canAdd = await checkSubscriptionLimit();
+    if (!canAdd) {
+        alert('⚠️ Member limit reached! Please upgrade your plan to add more members.');
+        window.location.href = 'billing.html';
+        return;
+    }
+
     // Calculate fee and end date based on plan
     const planPrices = {
         monthly: 1000,
@@ -365,8 +374,20 @@ addMemberForm.addEventListener('submit', async (e) => {
     memberData.membershipEndDate = Timestamp.fromDate(endDate);
 
     try {
-        await addDoc(collection(db, 'members'), memberData);
+        const memberRef = await addDoc(collection(db, 'members'), memberData);
         console.log('✅ Member added successfully');
+
+        // Record Initial Payment
+        await addDoc(collection(db, 'payments'), {
+            memberId: memberRef.id,
+            memberName: memberData.name,
+            amount: memberData.feeAmount,
+            type: 'New Membership',
+            plan: memberData.membershipPlan,
+            date: memberData.joiningDate, // Use joining date for initial payment
+            ownerId: currentUser.uid,
+            createdAt: serverTimestamp()
+        });
 
         // Close modal and reset form
         closeModal(addMemberModal);
@@ -677,7 +698,17 @@ async function collectFee(memberId) {
             lastPaymentDate: serverTimestamp()
         });
 
-        console.log('✅ Fee collected and membership renewed');
+        // Record Renewal Payment
+        await addDoc(collection(db, 'payments'), {
+            memberId: memberId,
+            memberName: member.name,
+            amount: member.feeAmount,
+            type: 'Renewal',
+            plan: member.membershipPlan,
+            date: serverTimestamp(),
+            ownerId: currentUser.uid,
+            createdAt: serverTimestamp()
+        });
 
         console.log('✅ Fee collected and membership renewed');
         // Data updates automatically via onSnapshot
@@ -692,20 +723,7 @@ async function collectFee(memberId) {
 // ========================================
 // Logout Handler
 // ========================================
-logoutBtn.addEventListener('click', async () => {
-    try {
-        // Unsubscribe listeners
-        if (unsubscribeMembers) unsubscribeMembers();
-        if (unsubscribeAttendance) unsubscribeAttendance();
-
-        await signOut(auth);
-        console.log('✅ Logged out successfully');
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error('Logout error:', error);
-        alert('Failed to logout. Please try again.');
-    }
-});
+// Logout logic moved to settings.js
 
 // ========================================
 // Auth State Observer
@@ -720,3 +738,152 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = 'index.html';
     }
 });
+
+// ========================================
+// WhatsApp Settings Logic
+// ========================================
+const settingsBtn = document.getElementById('whatsappSettingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+const closeSettingsModal = document.getElementById('closeSettingsModal');
+const cancelSettings = document.getElementById('cancelSettings');
+const settingsForm = document.getElementById('settingsForm');
+
+// Form Elements
+const absentEnabled = document.getElementById('absentEnabled');
+const absentTime = document.getElementById('absentTime');
+const absentTemplate = document.getElementById('absentTemplate');
+
+const feeDueEnabled = document.getElementById('feeDueEnabled');
+const feeDueTime = document.getElementById('feeDueTime');
+const feeDueTemplate = document.getElementById('feeDueTemplate');
+
+const motivationEnabled = document.getElementById('motivationEnabled');
+const motivationTime = document.getElementById('motivationTime');
+const motivationTemplate = document.getElementById('motivationTemplate');
+
+// Open Modal
+if (settingsBtn) {
+    settingsBtn.addEventListener('click', async () => {
+        openModal(settingsModal);
+        await loadSettings();
+    });
+}
+
+// Close Modal
+if (closeSettingsModal) closeSettingsModal.addEventListener('click', () => closeModal(settingsModal));
+if (cancelSettings) cancelSettings.addEventListener('click', () => closeModal(settingsModal));
+if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            closeModal(settingsModal);
+        }
+    });
+}
+
+// Load Settings
+async function loadSettings() {
+    if (!currentUser) return;
+
+    try {
+        const docRef = doc(db, 'settings', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+
+            // Absent Reminder
+            if (absentEnabled) absentEnabled.checked = data.absent?.enabled || false;
+            if (absentTime) absentTime.value = data.absent?.time || '09:00';
+            if (absentTemplate) absentTemplate.value = data.absent?.template || '';
+
+            // Fee Due Reminder
+            if (feeDueEnabled) feeDueEnabled.checked = data.feeDue?.enabled || false;
+            if (feeDueTime) feeDueTime.value = data.feeDue?.time || '10:00';
+            if (feeDueTemplate) feeDueTemplate.value = data.feeDue?.template || '';
+
+            // Motivation Message
+            if (motivationEnabled) motivationEnabled.checked = data.motivation?.enabled || false;
+            if (motivationTime) motivationTime.value = data.motivation?.time || '08:00';
+            if (motivationTemplate) motivationTemplate.value = data.motivation?.template || '';
+        }
+    } catch (error) {
+        console.error("Error loading settings:", error);
+    }
+}
+
+// Save Settings
+if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        const settingsData = {
+            absent: {
+                enabled: absentEnabled.checked,
+                time: absentTime.value,
+                template: absentTemplate.value
+            },
+            feeDue: {
+                enabled: feeDueEnabled.checked,
+                time: feeDueTime.value,
+                template: feeDueTemplate.value
+            },
+            motivation: {
+                enabled: motivationEnabled.checked,
+                time: motivationTime.value,
+                template: motivationTemplate.value
+            },
+            updatedAt: serverTimestamp()
+        };
+
+        try {
+            const btn = settingsForm.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            await setDoc(doc(db, 'settings', currentUser.uid), settingsData, { merge: true });
+
+            alert('Settings saved successfully! ✅');
+            closeModal(settingsModal);
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            alert('Failed to save settings. Please try again.');
+        } finally {
+            const btn = settingsForm.querySelector('button[type="submit"]');
+            btn.textContent = 'Save Settings';
+            btn.disabled = false;
+        }
+    });
+}
+// ========================================
+// Check Subscription Limit
+// ========================================
+async function checkSubscriptionLimit() {
+    if (!currentUser) return false;
+
+    try {
+        const docRef = doc(db, 'subscriptions', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+
+        let memberLimit = 50; // Default limit for free/basic
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            memberLimit = data.memberLimit || 50;
+
+            // Check expiry
+            if (data.expiryDate && data.expiryDate.toDate() < new Date()) {
+                alert('⚠️ Your subscription has expired. Please renew to continue.');
+                window.location.href = 'billing.html';
+                return false;
+            }
+        }
+
+        return gymMembers.length < memberLimit;
+    } catch (error) {
+        console.error("Error checking limit:", error);
+        return true; // Allow on error to avoid blocking valid users if DB issue
+    }
+}
+}

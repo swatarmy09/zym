@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription & Billing - GymOwner Pro</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        .billing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+
+        .billing-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .billing-header h1 {
+            font-size: 32px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .billing-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .back-link {
+            position: absolute;
+            left: 32px;
+            top: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .plan-card {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .plan-card.active {
+            border-color: var(--primary);
+            background: linear-gradient(to bottom, #eff6ff, #ffffff);
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .plan-price {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .plan-price span {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 32px;
+            flex: 1;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .feature-icon {
+            color: var(--success);
+            font-size: 18px;
+        }
+
+        .plan-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .plan-btn.current {
+            background: #e5e7eb;
+            color: var(--text-secondary);
+            cursor: default;
+        }
+
+        .plan-btn.upgrade {
+            background: var(--primary);
+            color: white;
+        }
+
+        .plan-btn.upgrade:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Billing History */
+        .history-section {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .history-header h2 {
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            text-align: left;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .history-table td {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .status-paid {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .back-link {
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .billing-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="billing-container">
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+
+        <div class="billing-header">
+            <h1>Subscription & Plans</h1>
+            <p>Choose the perfect plan to grow your gym business</p>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            <!-- Basic Plan -->
+            <div class="plan-card" id="plan-basic">
+                <h3 class="plan-name">Basic</h3>
+                <div class="plan-price">₹999<span>/month</span></div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Up to 50 Members</li>
+                    <li><span class="feature-icon">✓</span> Basic Reporting</li>
+                    <li><span class="feature-icon">✓</span> Email Support</li>
+                </ul>
+                <button class="plan-btn upgrade" onclick="upgradePlan('basic', 999, 50)">Choose Basic</button>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="plan-card" id="plan-pro">
+                <h3 class="plan-name">Pro</h3>
+                <div class="plan-price">₹1,999<span>/month</span></div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Up to 200 Members</li>
+                    <li><span class="feature-icon">✓</span> Advanced Analytics</li>
+                    <li><span class="feature-icon">✓</span> WhatsApp Integration</li>
+                    <li><span class="feature-icon">✓</span> Priority Support</li>
+                </ul>
+                <button class="plan-btn upgrade" onclick="upgradePlan('pro', 1999, 200)">Choose Pro</button>
+            </div>
+
+            <!-- Unlimited Plan -->
+            <div class="plan-card" id="plan-unlimited">
+                <h3 class="plan-name">Unlimited</h3>
+                <div class="plan-price">₹2,999<span>/month</span></div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Unlimited Members</li>
+                    <li><span class="feature-icon">✓</span> All Pro Features</li>
+                    <li><span class="feature-icon">✓</span> Custom Branding</li>
+                    <li><span class="feature-icon">✓</span> 24/7 Dedicated Support</li>
+                </ul>
+                <button class="plan-btn upgrade" onclick="upgradePlan('unlimited', 2999, 999999)">Choose
+                    Unlimited</button>
+            </div>
+        </div>
+
+        <!-- Billing History -->
+        <div class="history-section">
+            <div class="history-header">
+                <h2>Billing History</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Plan</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billingHistoryBody">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="billing.js"></script>
+</body>
+
+</html>
