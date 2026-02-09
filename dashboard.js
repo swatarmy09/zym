@@ -58,12 +58,19 @@ const membersListEl = document.getElementById('membersList');
 const dueFeesListEl = document.getElementById('dueFeesList');
 const activityListEl = document.getElementById('activityList');
 
+// Attendance Modal Elements
+const attendanceDateEl = document.getElementById('attendanceDate');
+const selectedCountEl = document.getElementById('selectedCount');
+const totalCountEl = document.getElementById('totalCount');
+const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
+
 // Global Variables
 let currentUser = null;
 let gymMembers = [];
 let attendanceToday = [];
 let unsubscribeMembers = null;
 let unsubscribeAttendance = null;
+let selectedAttendance = new Set(); // Track selected members for attendance
 
 // ========================================
 // Initialize Dashboard
@@ -300,6 +307,7 @@ cancelAddMember.addEventListener('click', () => closeModal(addMemberModal));
 // Attendance Modal
 markAttendanceBtn.addEventListener('click', () => {
     openModal(attendanceModal);
+    updateAttendanceDate();
     renderMembersList();
 });
 
@@ -372,6 +380,20 @@ addMemberForm.addEventListener('submit', async (e) => {
 });
 
 // ========================================
+// Update Attendance Date Display
+// ========================================
+function updateAttendanceDate() {
+    const today = new Date();
+    const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    };
+    attendanceDateEl.textContent = today.toLocaleDateString('en-IN', options);
+}
+
+// ========================================
 // Render Members List for Attendance
 // ========================================
 function renderMembersList(searchTerm = '') {
@@ -382,30 +404,51 @@ function renderMembersList(searchTerm = '') {
 
     if (filteredMembers.length === 0) {
         membersListEl.innerHTML = '<div class="empty-state"><p>No members found.</p></div>';
+        totalCountEl.textContent = '0';
+        selectedCountEl.textContent = '0';
         return;
     }
 
+    // Update total count
+    totalCountEl.textContent = filteredMembers.length;
+
     membersListEl.innerHTML = filteredMembers.map(member => {
         const hasAttendance = attendanceToday.some(att => att.memberId === member.id);
+        const isChecked = selectedAttendance.has(member.id) || hasAttendance;
+
         return `
-            <div class="member-item">
-                <div class="member-info">
-                    <p class="member-name">${member.name}</p>
-                    <p class="member-mobile">${member.mobile}</p>
+            <div class="attendance-member-item ${isChecked ? 'checked' : ''} ${hasAttendance ? 'already-marked' : ''}" 
+                 data-member-id="${member.id}"
+                 onclick="toggleAttendance('${member.id}', ${hasAttendance})">
+                <div class="attendance-checkbox-wrapper">
+                    <input type="checkbox" 
+                           class="attendance-checkbox" 
+                           id="attendance-${member.id}"
+                           data-member-id="${member.id}"
+                           ${isChecked ? 'checked' : ''}
+                           ${hasAttendance ? 'disabled' : ''}
+                           onclick="event.stopPropagation()">
                 </div>
-                <button class="attendance-btn ${hasAttendance ? 'marked' : ''}" 
-                        data-member-id="${member.id}"
-                        ${hasAttendance ? 'disabled' : ''}>
-                    ${hasAttendance ? '✓ Marked' : 'Mark'}
-                </button>
+                <div class="attendance-member-details">
+                    <p class="attendance-member-name">${member.name}</p>
+                    <p class="attendance-member-mobile">📱 ${member.mobile}</p>
+                </div>
+                ${hasAttendance ? '<span class="attendance-status-badge marked">Already Marked</span>' : ''}
             </div>
         `;
     }).join('');
 
-    // Add event listeners to attendance buttons
-    document.querySelectorAll('.attendance-btn:not([disabled])').forEach(btn => {
-        btn.addEventListener('click', () => markAttendance(btn.dataset.memberId));
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.attendance-checkbox:not([disabled])').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            e.stopPropagation();
+            const memberId = checkbox.dataset.memberId;
+            toggleAttendance(memberId, false);
+        });
     });
+
+    // Update selected count
+    updateSelectedCount();
 }
 
 searchMemberInput.addEventListener('input', (e) => {
@@ -413,29 +456,97 @@ searchMemberInput.addEventListener('input', (e) => {
 });
 
 // ========================================
-// Mark Attendance
+// Toggle Attendance Selection
 // ========================================
-async function markAttendance(memberId) {
+function toggleAttendance(memberId, alreadyMarked) {
+    if (alreadyMarked) return; // Don't allow toggling already marked attendance
+
+    const checkbox = document.getElementById(`attendance-${memberId}`);
+    if (!checkbox) return;
+
+    if (selectedAttendance.has(memberId)) {
+        selectedAttendance.delete(memberId);
+        checkbox.checked = false;
+    } else {
+        selectedAttendance.add(memberId);
+        checkbox.checked = true;
+    }
+
+    // Update UI
+    const memberItem = checkbox.closest('.attendance-member-item');
+    if (memberItem) {
+        memberItem.classList.toggle('checked', checkbox.checked);
+    }
+
+    updateSelectedCount();
+}
+
+// Make toggleAttendance globally accessible
+window.toggleAttendance = toggleAttendance;
+
+// ========================================
+// Update Selected Count
+// ========================================
+function updateSelectedCount() {
+    const alreadyMarkedCount = attendanceToday.length;
+    const newlySelectedCount = selectedAttendance.size;
+    const totalPresent = alreadyMarkedCount + newlySelectedCount;
+
+    selectedCountEl.textContent = totalPresent;
+}
+
+// ========================================
+// Save Attendance (Bulk)
+// ========================================
+async function saveAttendance() {
+    if (selectedAttendance.size === 0) {
+        alert('⚠️ Please select at least one member to mark attendance.');
+        return;
+    }
+
+    const confirmMsg = `Mark attendance for ${selectedAttendance.size} member(s)?`;
+    if (!confirm(confirmMsg)) return;
+
     try {
+        saveAttendanceBtn.disabled = true;
+        saveAttendanceBtn.innerHTML = '<span>Saving...</span>';
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        await addDoc(collection(db, 'attendance'), {
-            memberId: memberId,
-            ownerId: currentUser.uid,
-            date: Timestamp.fromDate(today),
-            timestamp: serverTimestamp()
+        // Save all selected attendance records
+        const promises = Array.from(selectedAttendance).map(memberId => {
+            return addDoc(collection(db, 'attendance'), {
+                memberId: memberId,
+                ownerId: currentUser.uid,
+                date: Timestamp.fromDate(today),
+                timestamp: serverTimestamp()
+            });
         });
 
-        console.log('✅ Attendance marked');
+        await Promise.all(promises);
 
-        console.log('✅ Attendance marked');
+        console.log(`✅ Attendance marked for ${selectedAttendance.size} members`);
+
+        // Clear selection
+        selectedAttendance.clear();
+
+        // Show success message
+        alert(`✅ Attendance saved successfully for ${promises.length} member(s)!`);
+
         // Data updates automatically via onSnapshot
+        // Re-render will happen automatically
     } catch (error) {
-        console.error('Error marking attendance:', error);
-        alert('Failed to mark attendance. Please try again.');
+        console.error('Error saving attendance:', error);
+        alert('❌ Failed to save attendance. Please try again.');
+    } finally {
+        saveAttendanceBtn.disabled = false;
+        saveAttendanceBtn.innerHTML = '<span class="btn-icon">✓</span><span>Save Attendance</span>';
     }
 }
+
+// Save Attendance Button Event Listener
+saveAttendanceBtn.addEventListener('click', saveAttendance);
 
 // ========================================
 // Render Due Fees List

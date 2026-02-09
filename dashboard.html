@@ -175,19 +175,46 @@
 
     <!-- Mark Attendance Modal -->
     <div class="modal" id="attendanceModal">
-        <div class="modal-content">
+        <div class="modal-content attendance-modal-content">
             <div class="modal-header">
-                <h3>Mark Attendance</h3>
+                <h3>📋 Mark Attendance</h3>
                 <button class="close-btn" id="closeAttendanceModal">&times;</button>
             </div>
+
+            <!-- Today's Date Display -->
+            <div class="attendance-date-section">
+                <div class="date-badge">
+                    <span class="date-icon">📅</span>
+                    <div class="date-info">
+                        <p class="date-label">Today's Date</p>
+                        <p class="date-value" id="attendanceDate">Loading...</p>
+                    </div>
+                </div>
+                <div class="attendance-summary">
+                    <span id="selectedCount">0</span> / <span id="totalCount">0</span> Present
+                </div>
+            </div>
+
             <div class="search-section">
-                <input type="text" id="searchMember" placeholder="Search member by name or mobile..."
+                <input type="text" id="searchMember" placeholder="🔍 Search member by name or mobile..."
                     class="search-input">
             </div>
-            <div class="members-list" id="membersList">
-                <div class="empty-state">
-                    <p>No members found. Add members first.</p>
+
+            <!-- Members List with Checkboxes -->
+            <div class="attendance-list-wrapper">
+                <div class="members-list-attendance" id="membersList">
+                    <div class="empty-state">
+                        <p>No members found. Add members first.</p>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Save Attendance Button -->
+            <div class="attendance-actions">
+                <button type="button" class="btn-save-attendance" id="saveAttendanceBtn">
+                    <span class="btn-icon">✓</span>
+                    <span>Save Attendance</span>
+                </button>
             </div>
         </div>
     </div>

@@ -632,6 +632,270 @@ body {
 }
 
 /* ========================================
+   Attendance Modal Enhancements
+   ======================================== */
+.attendance-modal-content {
+    max-width: 700px;
+}
+
+.attendance-date-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.date-badge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.date-icon {
+    font-size: 32px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.date-info {
+    color: white;
+}
+
+.date-label {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}
+
+.date-value {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.attendance-summary {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px 20px;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+}
+
+.attendance-summary span {
+    color: #fbbf24;
+}
+
+.attendance-list-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 4px;
+}
+
+/* Custom Scrollbar */
+.attendance-list-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.attendance-list-wrapper::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.attendance-list-wrapper::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+.attendance-list-wrapper::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+.members-list-attendance {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.attendance-member-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.attendance-member-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.attendance-member-item.checked {
+    background: #d1fae5;
+    border-color: var(--secondary);
+}
+
+.attendance-member-item.already-marked {
+    background: #f3f4f6;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.attendance-member-item.already-marked:hover {
+    transform: none;
+}
+
+/* Custom Checkbox */
+.attendance-checkbox-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.attendance-checkbox {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: white;
+}
+
+.attendance-checkbox:hover {
+    border-color: var(--primary);
+}
+
+.attendance-checkbox:checked {
+    background: var(--secondary);
+    border-color: var(--secondary);
+}
+
+.attendance-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.attendance-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.attendance-member-details {
+    flex: 1;
+}
+
+.attendance-member-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.attendance-member-mobile {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.attendance-status-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.attendance-status-badge.present {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.attendance-status-badge.marked {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* Save Attendance Button */
+.attendance-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border);
+}
+
+.btn-save-attendance {
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-save-attendance:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-save-attendance:active {
+    transform: translateY(0);
+}
+
+.btn-save-attendance .btn-icon {
+    font-size: 20px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+}
+
+.btn-save-attendance:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-save-attendance:disabled:hover {
+    transform: none;
+}
+
+
+/* ========================================
    Responsive Design
    ======================================== */
 @media (max-width: 768px) {
@@ -663,6 +927,27 @@ body {
 
     .modal-content {
         padding: 24px;
+    }
+
+    /* Attendance Modal Responsive */
+    .attendance-date-section {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .attendance-summary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .date-value {
+        font-size: 16px;
+    }
+
+    .btn-save-attendance {
+        font-size: 15px;
+        padding: 14px 20px;
     }
 }
 
